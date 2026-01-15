@@ -189,7 +189,9 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         running_var = momentum * running_var + (1 - momentum) * batch_var
 
         #Normalize the incoming data z* = (z - batch_mean) / batch_std
+        xc = x - batch_mean
         norm_input = (x - batch_mean)/batch_std
+        # print(f"The datatype of norm is: {norm_input[0][0].dtype}")
         # print(f"The shape of the normalized input is: {norm_input.shape}")
         #Since normalization is done per feature(neuron), the learnable parameters are also per feature(neuron).
         #So, they have a dimension of - (D,) where D is number of neurons/features
@@ -197,6 +199,17 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #output is not a dot product with gamma, it is a element wise multiplication
 
         # print(f"The normalized output is: {norm_input} is of shape: {norm_input.shape}")
+
+        cache = {
+            "x": x,
+            "xc": xc,
+            "mean": batch_mean,
+            "var": batch_var,
+            "std": batch_std,
+            "gamma": gamma,
+            "beta": beta,
+            "eps": eps
+        }
 
 
         #######################################################################
@@ -265,6 +278,10 @@ def batchnorm_backward(dout, cache):
     - dbeta: Gradient with respect to shift parameter beta, of shape (D,)
     """
     dx, dgamma, dbeta = None, None, None
+
+    dgamma = cache['xc']/cache['std']
+    dbeta = 1
+    dx = 
     ###########################################################################
     # TODO: Implement the backward pass for batch normalization. Store the    #
     # results in the dx, dgamma, and dbeta variables.                         #

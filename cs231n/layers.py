@@ -277,11 +277,14 @@ def batchnorm_backward(dout, cache):
     - dgamma: Gradient with respect to scale parameter gamma, of shape (D,)
     - dbeta: Gradient with respect to shift parameter beta, of shape (D,)
     """
-    dx, dgamma, dbeta = None, None, None
+    # dx, dgamma, dbeta = None, None, None
+    N = dout.shape[0]
 
-    dgamma = cache['xc']/cache['std']
-    dbeta = 1
-    dx = 
+    dbeta = np.sum(dout, axis=0)
+    dgamma = np.sum(dout*z, axis=0)
+    dz = dout * cache['gamma']
+    dxc = (dz/cache['std']) - (np.sum(dz * cache['xc'], axis=0) / (N * cache['std']**3)) * cache['xc'] 
+    dx = dxc - np.mean(dxc, axis=0)
     ###########################################################################
     # TODO: Implement the backward pass for batch normalization. Store the    #
     # results in the dx, dgamma, and dbeta variables.                         #

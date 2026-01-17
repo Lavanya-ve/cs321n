@@ -203,12 +203,10 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         cache = {
             "x": x,
             "xc": xc,
-            "mean": batch_mean,
-            "var": batch_var,
+            "z": norm_input,
             "std": batch_std,
             "gamma": gamma,
-            "beta": beta,
-            "eps": eps
+            "mean":batch_mean
         }
 
 
@@ -281,7 +279,8 @@ def batchnorm_backward(dout, cache):
     N = dout.shape[0]
 
     dbeta = np.sum(dout, axis=0)
-    dgamma = np.sum(dout*z, axis=0)
+    dgamma = np.sum(dout*cache['z'], axis=0)
+    
     dz = dout * cache['gamma']
     dxc = (dz/cache['std']) - (np.sum(dz * cache['xc'], axis=0) / (N * cache['std']**3)) * cache['xc'] 
     dx = dxc - np.mean(dxc, axis=0)
@@ -312,7 +311,16 @@ def batchnorm_backward_alt(dout, cache):
 
     Inputs / outputs: Same as batchnorm_backward
     """
-    dx, dgamma, dbeta = None, None, None
+    #dx, dgamma, dbeta = None, None, None
+
+    N = dout.shape[0]
+    dbeta = np.sum(dout, axis=0)
+    dgamma = np.sum(dout*cache['z'], axis=0)
+    dy = dout * cache['gamma']
+    dxu = (cache['x']-cache['mean'])
+    numerator = dxu * np.sum(dxu, axis=0)
+    d1 = (dxu * numerator)/(N * cache['std']**2)
+    dx = (1/cache['std']) * (dy - (np.sum(dy, axis=0)/N) - d1)
     ###########################################################################
     # TODO: Implement the backward pass for batch normalization. Store the    #
     # results in the dx, dgamma, and dbeta variables.                         #

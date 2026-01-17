@@ -60,6 +60,25 @@ class FullyConnectedNet(object):
         self.dtype = dtype
         self.params = {}
 
+        layer_dimensions = [input_dim] + hidden_dims + [num_classes]
+        # print(f"Layer dimensions: {layer_dimensions}")
+
+        for layerNumber in range(len(layer_dimensions)-1):
+            self.params[f'W{layerNumber+1}'] = np.random.normal(0,weight_scale,(layer_dimensions[layerNumber], layer_dimensions[layerNumber+1]))
+            self.params[f'b{layerNumber+1}'] = np.zeros(layer_dimensions[layerNumber+1])
+
+            if self.normalization=='batchnorm' and layerNumber > 0 and layerNumber < len(layer_dimensions)-1:
+                self.params[f'gamma{layerNumber}'] = np.ones(layer_dimensions[layerNumber])
+                self.params[f'beta{layerNumber}'] = np.zeros(layer_dimensions[layerNumber])
+
+                # print(f"gamma{layerNumber} = {self.params[f'gamma{layerNumber}'].shape}")
+                # print(f"beta{layerNumber} = {self.params[f'beta{layerNumber}'].shape}")
+            
+            
+
+        # print(f"Params is: {self.params.keys()}")
+
+
         ############################################################################
         # TODO: Initialize the parameters of the network, storing all values in    #
         # the self.params dictionary. Store weights and biases for the first layer #

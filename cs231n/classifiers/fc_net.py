@@ -1,6 +1,7 @@
 from builtins import range
 from builtins import object
 import numpy as np
+from cs231n.layers import batchnorm_forward
 
 from ..layers import *
 from ..layer_utils import *
@@ -71,12 +72,12 @@ class FullyConnectedNet(object):
                 self.params[f'gamma{layerNumber}'] = np.ones(layer_dimensions[layerNumber])
                 self.params[f'beta{layerNumber}'] = np.zeros(layer_dimensions[layerNumber])
 
-                # print(f"gamma{layerNumber} = {self.params[f'gamma{layerNumber}'].shape}")
-                # print(f"beta{layerNumber} = {self.params[f'beta{layerNumber}'].shape}")
+                print(f"gamma{layerNumber} = {self.params[f'gamma{layerNumber}'].shape}")
+                print(f"beta{layerNumber} = {self.params[f'beta{layerNumber}'].shape}")
             
             
 
-        # print(f"Params is: {self.params.keys()}")
+        print(f"Params is: {self.params.keys()}")
 
 
         ############################################################################
@@ -149,6 +150,29 @@ class FullyConnectedNet(object):
             for bn_param in self.bn_params:
                 bn_param["mode"] = mode
         scores = None
+
+        def softmax(out):
+            e_x = np.exp(out - np.max(out))
+            return e_x/e_x.sum()
+
+        def forward_pass(X):
+
+            input = X
+            for i in range(self.num_layers - 1):
+                # print(f"The shape of input is: {input.shape}")
+                # print(f"The shape of W{i+1} is: {self.params[f'W{i+1}'].shape}")
+                z = input @ self.params[f'W{i+1}'] + self.params[f'b{i+1}']
+                z_norm, _ = batchnorm_forward(z,self.params[f'gamma{i+1}'],self.params[f'beta{i+1}'],self.bn_params[i])
+                a = np.maximum(z_norm,0)
+                input = a
+
+            output_layer = self.num_layers
+            output = input @ self.params[f'W{output_layer}'] + self.params[f'b{output_layer}']
+            norm_output = softmax(output)
+
+            return norm_output
+
+
         ############################################################################
         # TODO: Implement the forward pass for the fully connected net, computing  #
         # the class scores for X and storing them in the scores variable.          #
@@ -166,11 +190,21 @@ class FullyConnectedNet(object):
         #                             END OF YOUR CODE                             #
         ############################################################################
 
+        #Forward propogation for the network
+        scores = forward_pass(X)
+
         # If test mode return early.
         if mode == "test":
             return scores
 
         loss, grads = 0.0, {}
+
+        #Compute loss of the output layer
+        N = X.shape[0]
+        loss = -np.mean(np.log(scores[np.arange(N), y]))
+        dout = -np.mean(1/scores[np.arange(N), y])
+        print(f"Dout is: {dout}")
+
         ############################################################################
         # TODO: Implement the backward pass for the fully connected net. Store the #
         # loss in the loss variable and gradients in the grads dictionary. Compute #

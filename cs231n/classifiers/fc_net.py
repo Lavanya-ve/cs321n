@@ -141,6 +141,7 @@ class FullyConnectedNet(object):
         """
         X = X.astype(self.dtype)
         mode = "test" if y is None else "train"
+        cache = {}
 
         # Set train/test mode for batchnorm params and dropout param since they
         # behave differently during training and testing.
@@ -162,13 +163,16 @@ class FullyConnectedNet(object):
                 # print(f"The shape of input is: {input.shape}")
                 # print(f"The shape of W{i+1} is: {self.params[f'W{i+1}'].shape}")
                 z = input @ self.params[f'W{i+1}'] + self.params[f'b{i+1}']
-                z_norm, _ = batchnorm_forward(z,self.params[f'gamma{i+1}'],self.params[f'beta{i+1}'],self.bn_params[i])
+                z_norm, cache_batch = batchnorm_forward(z,self.params[f'gamma{i+1}'],self.params[f'beta{i+1}'],self.bn_params[i])
                 a = np.maximum(z_norm,0)
                 input = a
+                cache[f'cache_batch{i+1}'] = cache_batch
 
             output_layer = self.num_layers
             output = input @ self.params[f'W{output_layer}'] + self.params[f'b{output_layer}']
             norm_output = softmax(output)
+
+            print(f"The cache for the batch_norm is: {cache.keys()}")
 
             return norm_output
 
@@ -202,8 +206,13 @@ class FullyConnectedNet(object):
         #Compute loss of the output layer
         N = X.shape[0]
         loss = -np.mean(np.log(scores[np.arange(N), y]))
-        dout = -np.mean(1/scores[np.arange(N), y])
-        print(f"Dout is: {dout}")
+        
+        #derivative of loss w.r.t scores
+        dscores = np.zeros_like(scores)
+        dscores[np.arange(N),y] = -1/(N*scores[np.arange(N),y]) #---> (N,C)
+        # print(f"The shape of dscores should be Nxc: {dscores}.shape")
+
+        
 
         ############################################################################
         # TODO: Implement the backward pass for the fully connected net. Store the #

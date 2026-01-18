@@ -236,8 +236,8 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #######################################################################
     elif mode == "test":
         
-        running_mean = 1
-        running_var = 1
+        # running_mean = 1
+        # running_var = 1
         
         norm_input = (x - running_mean)/running_var
         out = gamma * norm_input + beta

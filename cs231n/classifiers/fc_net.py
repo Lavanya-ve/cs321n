@@ -60,24 +60,18 @@ class FullyConnectedNet(object):
         self.num_layers = 1 + len(hidden_dims)
         self.dtype = dtype
         self.params = {}
+        self.layer_dimensions = [input_dim] + hidden_dims + [num_classes]
 
-        layer_dimensions = [input_dim] + hidden_dims + [num_classes]
-        # print(f"Layer dimensions: {layer_dimensions}")
+        print(f"Layer dimensions: {self.layer_dimensions}")
 
-        for layerNumber in range(len(layer_dimensions)-1):
-            self.params[f'W{layerNumber+1}'] = np.random.normal(0,weight_scale,(layer_dimensions[layerNumber], layer_dimensions[layerNumber+1]))
-            self.params[f'b{layerNumber+1}'] = np.zeros(layer_dimensions[layerNumber+1])
+        #Setting up parameters
+        for layer in range(1, len(self.layer_dimensions)):
+            self.params[f'W{layer}'] = np.random.normal(0, weight_scale, (self.layer_dimensions[layer-1], self.layer_dimensions[layer]))
+            self.params[f'b{layer}'] = np.zeros(self.layer_dimensions[layer])
 
-            if self.normalization=='batchnorm' and layerNumber > 0 and layerNumber < len(layer_dimensions)-1:
-                self.params[f'gamma{layerNumber}'] = np.ones(layer_dimensions[layerNumber])
-                self.params[f'beta{layerNumber}'] = np.zeros(layer_dimensions[layerNumber])
-
-                print(f"gamma{layerNumber} = {self.params[f'gamma{layerNumber}'].shape}")
-                print(f"beta{layerNumber} = {self.params[f'beta{layerNumber}'].shape}")
-            
-            
-
-        print(f"Params is: {self.params.keys()}")
+            if layer < len(self.layer_dimensions)-1 and self.normalization=="batchnorm":
+                self.params[f'gamma{layer}'] = np.ones(self.layer_dimensions[layer])
+                self.params[f'beta{layer}'] = np.zeros(self.layer_dimensions[layer])
 
 
         ############################################################################
@@ -159,22 +153,30 @@ class FullyConnectedNet(object):
         def forward_pass(X):
 
             input = X
-            for i in range(self.num_layers - 1):
+            soft_out = None
+            for layer in range(1, len(self.layer_dimensions)):
                 # print(f"The shape of input is: {input.shape}")
-                # print(f"The shape of W{i+1} is: {self.params[f'W{i+1}'].shape}")
-                z = input @ self.params[f'W{i+1}'] + self.params[f'b{i+1}']
-                z_norm, cache_batch = batchnorm_forward(z,self.params[f'gamma{i+1}'],self.params[f'beta{i+1}'],self.bn_params[i])
-                a = np.maximum(z_norm,0)
-                input = a
-                cache[f'cache_batch{i+1}'] = cache_batch
+                # print(f"The shape of W{layer} is: {self.params[f'W{layer}'].shape}")
+                z = input @ self.params[f'W{layer}'] + self.params[f'b{layer}']
 
-            output_layer = self.num_layers
-            output = input @ self.params[f'W{output_layer}'] + self.params[f'b{output_layer}']
-            norm_output = softmax(output)
+                if layer < len(self.layer_dimensions)-1:
+                    z_norm = z
+                    if self.normalization == "batchnorm":
+                        z_norm, bn_cache = batchnorm_forward(z,self.params[f'gamma{layer}'],self.params[f'beta{layer}'],self.bn_params[layer-1])
+                        cache[f'z_norm{layer}'] = z_norm
+                        cache[f'bn_cache{layer}'] = bn_cache
+                    a = np.maximum(z_norm,0)
+                    cache[f'a{layer}'] = a
+                    input = a
+
+                else:
+                    output = input @ self.params[f'W{layer}'] + self.params[f'b{layer}']
+                    soft_out = softmax(output)
 
             print(f"The cache for the batch_norm is: {cache.keys()}")
+            print(f"The type of soft_out is: {type(soft_out)}")
 
-            return norm_output
+            return soft_out
 
 
         ############################################################################
@@ -211,6 +213,9 @@ class FullyConnectedNet(object):
         dscores = np.zeros_like(scores)
         dscores[np.arange(N),y] = -1/(N*scores[np.arange(N),y]) #---> (N,C)
         # print(f"The shape of dscores should be Nxc: {dscores}.shape")
+
+        #Derivative of softmax w.r.t z3
+        
 
         
 

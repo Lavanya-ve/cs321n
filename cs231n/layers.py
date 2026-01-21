@@ -515,6 +515,36 @@ def conv_forward_naive(x, w, b, conv_param):
     - cache: (x, w, b, conv_param)
     """
     out = None
+    z = x #We create another temp value to store x, because, the author asked us not 
+    #to change the input matrix
+
+    if conv_param['pad']!=0: #If padding is present, change the input by adding padding
+      t = conv_param['pad'] 
+      z = np.pad(x,pad_width=((0,0),(0,0),(t,t),(t,t))) #To pad only width and height of the input, if (0,0) not present, then it is padding the N and C dimension as well
+      # print(f"Padding gives the shape of: {z.shape}, initial shape is: {x.shape}")
+
+    output_h = int(1 + (x.shape[-2]+2*conv_param['pad']-w.shape[-2])/conv_param['stride']) #height of output matrix
+    output_w = int(1 + (x.shape[-1]+2*conv_param['pad']-w.shape[-1])/conv_param['stride']) #width of output matrix
+
+    output_matrix = np.zeros((x.shape[0], w.shape[0], output_h, output_w)) #Output matrix of dimension - (N,F,H'',W'')
+    # print(f"The shape of output matrix is: {output_matrix.shape}")
+
+    for i in range(output_h): #We use the output_h as we have figured out the value for this
+      for j in range(output_w): #Similarly, we use the output_w 
+
+        h_start = i*conv_param['stride'] #i needs to jump by the number of stride, this is the starting value
+        w_start = j*conv_param['stride'] #Similar to i
+
+        #Broadcasting to the below, helps use parallelize the computation of input with F filters, else, we will have to convolve in a loop
+        region = z[:,None,:,h_start:h_start+w.shape[-2],w_start:w_start+w.shape[-1]] #This broadcasts input to - (N,1,C,HH,WW) - 1 here is for the filter
+        w_all = w[None,:,:,:,:] #This broadcasts w to -> (1,F,C,HH,WW) - here 1 is for N(number of examples)
+        output_matrix[:,:,i,j] = np.sum(region*w_all, axis=(2,3,4)) #We only add accross C,W and H so, we use the axis to specify what to sum
+        #We store the sum in output[N,F,i,j], but since parallelized we use the above to store values in it
+            
+    output_matrix += b[None,:, None, None] #Add bias by broadcasting as b has dimensions -> (F,) but output_matrix is (N,F,W,H), so change it to (None,F,None,None)
+
+    print(f"The shape of output matrix is: {output_matrix.shape}")
+
     ###########################################################################
     # TODO: Implement the convolutional forward pass.                         #
     # Hint: you can use the function np.pad for padding.                      #
@@ -524,6 +554,7 @@ def conv_forward_naive(x, w, b, conv_param):
     #                             END OF YOUR CODE                            #
     ###########################################################################
     cache = (x, w, b, conv_param)
+    out = output_matrix
     return out, cache
 
 

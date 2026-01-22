@@ -39,19 +39,19 @@ def load_CIFAR10(ROOT):
     ys = []
     for b in range(1, 6):
         f = os.path.join(ROOT, "data_batch_%d" % (b,))
-        # print(f"The path for the CIFAR file is: {f}")
-        # print(f"Does this cifar path exist: {os.path.exists(f)}")
+        print(f"The path for the CIFAR file is: {f}")
+        print(f"Does this cifar path exist: {os.path.exists(f)}")
         X, Y = load_CIFAR_batch(f)
         xs.append(X)
         ys.append(Y)
         del X, Y
-    # print("Added all the batch data into lists xs and ys")
+    print("Added all the batch data into lists xs and ys")
     Xtr = np.concatenate(xs)
     Ytr = np.concatenate(ys)
-    # print(f"The shape of Xtr and Ytr after concatination into an np array is {Xtr.shape} and {Ytr.shape}")
-    # print(f"Unabel to delete X and Y") 
+    print(f"The shape of Xtr and Ytr after concatination into an np array is {Xtr.shape} and {Ytr.shape}")
+    print(f"Unabel to delete X and Y") 
     Xte, Yte = load_CIFAR_batch(os.path.join(ROOT, "test_batch"))
-    # print(f"The shape of Xte and Yte after concatination into an np array is {Xte.shape} and {Yte.shape}")
+    print(f"The shape of Xte and Yte after concatination into an np array is {Xte.shape} and {Yte.shape}")
     return Xtr, Ytr, Xte, Yte
 
 
@@ -72,8 +72,8 @@ def get_CIFAR10_data(
     X_train, y_train, X_test, y_test = load_CIFAR10(cifar10_dir)
 
     #Data types of X_train and y_train
-    # print(f"The data type of X_train is: {X_train.dtype}")
-    # print(f"The data type of Y_train is: {y_train.dtype}")
+    print(f"The data type of X_train is: {X_train.dtype}")
+    print(f"The data type of Y_train is: {y_train.dtype}")
 
     # Subsample the data
     mask = list(range(num_training, num_training + num_validation))

@@ -543,7 +543,7 @@ def conv_forward_naive(x, w, b, conv_param):
             
     output_matrix += b[None,:, None, None] #Add bias by broadcasting as b has dimensions -> (F,) but output_matrix is (N,F,W,H), so change it to (None,F,None,None)
 
-    print(f"The shape of output matrix is: {output_matrix.shape}")
+    # print(f"The shape of output matrix is: {output_matrix.shape}")
 
     ###########################################################################
     # TODO: Implement the convolutional forward pass.                         #
@@ -571,6 +571,30 @@ def conv_backward_naive(dout, cache):
     - db: Gradient with respect to b
     """
     dx, dw, db = None, None, None
+    # print(f"{cache}")
+    stride = cache[-1]['stride']
+
+    #Let's compute the shape of dout to get db
+    # print(f"Shape of dout is: {dout.shape}") #(N,F,W',H')
+    # temp_dout = np.transpose(dout,axes=(1,0,2,3)) instead just sum accross the axis
+    db = np.sum(dout, axis=(0,2,3))
+    dw = np.zeros_like(cache[1])
+
+    for i in range(dout.shape[-2]):
+        for j in range(dout.shape[-1]):
+            h_start = i*stride
+            w_start = j*stride
+            input_patch = cache[0][:,:,h_start:h_start+cache[1].shape[-2],w_start:w_start+cache[1].shape[-1]]
+            # print(f"The shape of dout is: {dout[:,:,i,j][:,:,None,None,None].shape}")
+            # print(f"Shape of the input patch is: {input_patch[:,None,:,:,:].shape}")
+            t = dout[:,:,i,j][:,:,None,None,None] * input_patch[:,None,:,:,:]
+            # print(f"Shape of t is: {t.shape}")
+            # np.squeeze(t,axis=1)
+            dw+=np.sum(t,axis=0)
+            # print(f"Shape of dw is: {dw.shape}")
+            break
+    
+
     ###########################################################################
     # TODO: Implement the convolutional backward pass.                        #
     ###########################################################################

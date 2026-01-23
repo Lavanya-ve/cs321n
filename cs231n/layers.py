@@ -69,7 +69,7 @@ def relu_forward(x):
     - out: Output, of the same shape as x
     - cache: x
     """
-    out = None
+    out = np.maximum(x,0)
     ###########################################################################
     # TODO: Copy over your solution from Assignment 1.                        #
     ###########################################################################
@@ -92,6 +92,20 @@ def relu_backward(dout, cache):
     - dx: Gradient with respect to x
     """
     dx, x = None, cache
+
+    #When you think about, only the values of x that are > 0 contribute to the loss
+    #So, the gradient, i.e the rate of change of loss w.r.t relu depends on the values that contribute to the loss
+    #And the values that contribute to the loss, are the values of x that are >0, so only they should cater to the dL/dx
+
+    #First, we find the elements of x that are 0 and x(i.e > 0)
+    x_relu = np.maximum(x,0)
+    #Create a mask of True and False where in the values that are 0 are false
+    #The values that are > 0 are True, as they contribute to the gradient
+    mask = (x == x_relu)
+    #dout is masked with the above mask making sure, only the dout that is corresponding
+    #to >0 elements of x are used to calculate dx
+    dx = mask * dout
+
     ###########################################################################
     # TODO: Copy over your solution from Assignment 1.                        #
     ###########################################################################

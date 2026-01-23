@@ -20,7 +20,15 @@ def affine_forward(x, w, b):
     - out: output, of shape (N, M)
     - cache: (x, w, b)
     """
+    #Basically x is output of CNN - (N,C,H',W') --> we are flatening x to (N,D)
     out = None
+    D = 1
+    for i in x.shape[1:]:
+        D = D * i
+    
+    x_reshape = np.reshape(x,(x.shape[0],D))
+    out = x_reshape @ w + b
+
     ###########################################################################
     # TODO: Copy over your solution from Assignment 1.                        #
     ###########################################################################
@@ -48,7 +56,19 @@ def affine_backward(dout, cache):
     - db: Gradient with respect to b, of shape (M,)
     """
     x, w, b = cache
-    dx, dw, db = None, None, None
+    dx, dw, db = None, None, None #dx --> (N,D) dout(N,M) dw(D,M)
+
+    db = np.sum(dout,axis=0)
+    w_trans = w.T
+    dx = np.dot(dout,w_trans)
+    x_reshape = np.reshape(x,(x.shape[0],w.shape[0]))
+    x_trans = x_reshape.T
+    dw = np.dot(x_trans,dout)
+
+
+    # print(f"Shape of dx is: {dx.shape}")
+    # print(f"Shape of dw is: {dw.shape}")
+
     ###########################################################################
     # TODO: Copy over your solution from Assignment 1.                        #
     ###########################################################################
@@ -850,3 +870,13 @@ def spatial_groupnorm_backward(dout, cache):
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return dx, dgamma, dbeta
+
+
+if __name__=='__main__':
+    x = np.ones((3,3,3,3,3))
+    w = np.zeros((81,4))
+    b = np.zeros((4,))
+    dout = np.zeros((3,4))
+    out,_ = affine_forward(x,w,b)
+    l,k,t = affine_backward(dout,_)
+    # print(f"Shape of out is out is: {out.shape}")

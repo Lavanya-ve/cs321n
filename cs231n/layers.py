@@ -571,28 +571,41 @@ def conv_backward_naive(dout, cache):
     - db: Gradient with respect to b
     """
     dx, dw, db = None, None, None
-    # print(f"{cache}")
     stride = cache[-1]['stride']
+    pad = cache[-1]['pad']
+
+    x_pad = cache[0] #We create another temp value to store x, because, the author asked us not 
+    #to change the input matrix
+
+    if pad!=0: #If padding is present, change the input by adding padding
+      x_pad = np.pad(x_pad,pad_width=((0,0),(0,0),(pad,pad),(pad,pad))) #To pad only width and height of the input, if (0,0) not present, then it is padding the N and C dimension as well
+      
 
     #Let's compute the shape of dout to get db
     # print(f"Shape of dout is: {dout.shape}") #(N,F,W',H')
     # temp_dout = np.transpose(dout,axes=(1,0,2,3)) instead just sum accross the axis
     db = np.sum(dout, axis=(0,2,3))
     dw = np.zeros_like(cache[1])
+    dx_pad = np.zeros_like(x_pad) 
 
     for i in range(dout.shape[-2]):
         for j in range(dout.shape[-1]):
+
+            h_weight = cache[1].shape[-2]
+            w_weight = cache[1].shape[-1]
+
             h_start = i*stride
             w_start = j*stride
-            input_patch = cache[0][:,:,h_start:h_start+cache[1].shape[-2],w_start:w_start+cache[1].shape[-1]]
-            # print(f"The shape of dout is: {dout[:,:,i,j][:,:,None,None,None].shape}")
-            # print(f"Shape of the input patch is: {input_patch[:,None,:,:,:].shape}")
+
+            x_temp = dout[:,:,i,j][:,:,None,None,None] * cache[1][None,:,:,:] #(N,F,1,1,1) and (1,F,C,H',W')
+            dx_pad[:,:,h_start:h_start+h_weight,w_start:w_start+w_weight] += np.sum(x_temp,axis=(1))
+
+            input_patch = x_pad[:,:,h_start:h_start+cache[1].shape[-2],w_start:w_start+cache[1].shape[-1]]
             t = dout[:,:,i,j][:,:,None,None,None] * input_patch[:,None,:,:,:]
-            # print(f"Shape of t is: {t.shape}")
-            # np.squeeze(t,axis=1)
             dw+=np.sum(t,axis=0)
-            # print(f"Shape of dw is: {dw.shape}")
-            break
+
+    #Remove padding from dx_pad 
+    dx = dx_pad[:,:,pad:-pad,pad:-pad] #--> (N,C,removed pad height,removed pad width)
     
 
     ###########################################################################

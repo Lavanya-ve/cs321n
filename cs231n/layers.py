@@ -638,7 +638,20 @@ def max_pool_forward_naive(x, pool_param):
       W' = 1 + (W - pool_width) / stride
     - cache: (x, pool_param)
     """
-    out = None
+    stride = pool_param['stride']
+
+    h_output = int(1 + (x.shape[-2] - pool_param['pool_height'])/stride)
+    w_output = int(1 + (x.shape[-1] - pool_param['pool_width'])/stride)
+    out = np.zeros((x.shape[0], x.shape[1],h_output, w_output))
+
+    for i in range(h_output):
+        for j in range(w_output):
+            h_start = i*stride
+            w_start = j*stride
+            out[:,:,i,j] = np.max(x[:,:,h_start:h_start+pool_param['pool_height'],w_start:w_start+pool_param['pool_width']], axis=(-2,-1))
+            # print(f"Output is: {out[:,:,i,j].shape}")
+            # print(f"Output is: {np.max(x[:,:,h_start:h_start+pool_param['pool_height'],w_start:w_start+pool_param['pool_width']], axis=(-2,-1))}")
+
     ###########################################################################
     # TODO: Implement the max-pooling forward pass                            #
     ###########################################################################
@@ -660,7 +673,33 @@ def max_pool_backward_naive(dout, cache):
     Returns:
     - dx: Gradient with respect to x
     """
-    dx = None
+    dx = np.zeros_like(cache[0])
+    stride = cache[-1]['stride']
+
+    h_dout = dout.shape[-2]
+    w_dout = dout.shape[-1]
+    h_pool = cache[-1]['pool_height']
+    w_pool = cache[-1]['pool_width']
+
+    print(f"Shape of dout is: {dout.shape}")
+    print(f"Shape of dx is: {dx.shape}")
+
+    for i in range(h_dout):
+        for j in range(w_dout):
+            h_start = i*stride
+            w_start = j*stride
+
+            #Find max element in x again
+            x_patch = cache[0][:,:,h_start:h_start+h_pool,w_start:w_start+w_pool]
+            max_elem = np.max(x_patch, axis=(-2,-1)) #--> max_elem is of shape (N,C), we convert it to (N,C,1,1) using max_ele[:,:,None,None]
+            mask = x_patch == max_elem[:,:,None,None]
+            dx[:,:,h_start:h_start+h_pool,w_start:w_start+w_pool] += (mask * dout[:,:,i,j][:,:,None,None])
+
+            # print(f"dout is: {dout[:,:,i,j][:,:,None,None].shape}")
+            # Below would be true for average pooling, however our focus is on max pooling
+            # In max pooling, we only use the max value obtained from dx
+            # dx[:,:,h_start:h_start+h_pool,w_start:w_start+w_pool] += dout[:,:,i,j][:,:,None,None]
+
     ###########################################################################
     # TODO: Implement the max-pooling backward pass                           #
     ###########################################################################

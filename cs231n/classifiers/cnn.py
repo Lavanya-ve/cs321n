@@ -46,9 +46,12 @@ class ThreeLayerConvNet(object):
         self.reg = reg
         self.dtype = dtype
 
-        self.params['W1'] = np.random.normal(0,weight_scale,(num_filters,input_dim[0],input_dim[1],input_dim[2]))
+        self.params['W1'] = np.random.normal(0,weight_scale,(num_filters,input_dim[0],filter_size,filter_size))
         self.params['b1'] = np.zeros((num_filters,))
-        self.params['W2'] = np.random.normal(0,weight_scale,())
+        self.params['W2'] = np.random.normal(0,weight_scale,(num_filters*16*16, hidden_dim))
+        self.params['b2'] = np.zeros((hidden_dim,))
+        self.params['W3'] = np.random.normal(0,weight_scale,(hidden_dim, num_classes))
+        self.params['b3'] = np.zeros((num_classes,))
 
         ############################################################################
         # TODO: Initialize weights and biases for the three-layer convolutional    #
@@ -79,6 +82,12 @@ class ThreeLayerConvNet(object):
 
         Input / output: Same API as TwoLayerNet in fc_net.py.
         """
+
+        def softmax(x,axis=-1):
+            x_max = np.max(x, axis=axis, keepdims=True)
+            e_x = np.exp(x - x_max)
+            return e_x / np.sum(e_x, axis=axis, keepdims=True)
+
         W1, b1 = self.params["W1"], self.params["b1"]
         W2, b2 = self.params["W2"], self.params["b2"]
         W3, b3 = self.params["W3"], self.params["b3"]
@@ -91,7 +100,21 @@ class ThreeLayerConvNet(object):
         # pass pool_param to the forward pass for the max-pooling layer
         pool_param = {"pool_height": 2, "pool_width": 2, "stride": 2}
 
-        scores = None
+        conv_out,cache_conv = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
+        # print(f"Shape of conv_out is: {conv_out.shape}")
+
+        hidden_affline_out,cache_relu_for = affine_relu_forward(conv_out,W2,b2)
+        # print(f"Shape of hidden_affline_out is: {hidden_affline_out.shape}")
+
+        soft_affline_out,cache_aff_for = affine_forward(hidden_affline_out,W3,b3)
+        # print(f"Shape of softmax out is: {soft_affline_out.shape}")
+
+        scores_out = softmax(soft_affline_out)
+        print(f"Shape of scores is: {scores_out.shape}")
+
+        #Scores is the softmax of the above output
+
+        scores = scores_out
         ############################################################################
         # TODO: Implement the forward pass for the three-layer convolutional net,  #
         # computing the class scores for X and storing them in the scores          #
@@ -109,6 +132,17 @@ class ThreeLayerConvNet(object):
             return scores
 
         loss, grads = 0, {}
+
+        loss, dout_soft = softmax_loss(scores,y)
+        # print(f"Shape of dout after softmax loss is: {dout_soft.shape}")
+        dx3, dW3, db3 = affine_backward(dout_soft,cache_aff_for)
+        dx2, dW2, db2 = affine_relu_backward(dx3,cache_relu_for)
+        dX, dW1, db1 = conv_relu_pool_backward(dx2, cache_conv)
+
+        grads['W3'], grads['b3'] = dW3, db3
+        grads['W2'], grads['b2'] = dW2, db2
+        grads['W1'], grads['b1'] = dW1, db1
+
         ############################################################################
         # TODO: Implement the backward pass for the three-layer convolutional net, #
         # storing the loss and gradients in the loss and grads variables. Compute  #

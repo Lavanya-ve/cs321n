@@ -29,6 +29,7 @@ def affine_forward(x, w, b):
     x_reshape = np.reshape(x,(x.shape[0],D))
     out = x_reshape @ w + b
 
+
     ###########################################################################
     # TODO: Copy over your solution from Assignment 1.                        #
     ###########################################################################
@@ -59,15 +60,14 @@ def affine_backward(dout, cache):
     dx, dw, db = None, None, None #dx --> (N,D) dout(N,M) dw(D,M)
 
     db = np.sum(dout,axis=0)
-    w_trans = w.T
-    dx = np.dot(dout,w_trans)
+    dx = np.dot(a=dout,b=w.T)
     x_reshape = np.reshape(x,(x.shape[0],w.shape[0]))
-    x_trans = x_reshape.T
-    dw = np.dot(x_trans,dout)
-
+    dw = np.dot(a=x_reshape.T,b=dout)
+    dx = np.reshape(dx,x.shape)
 
     # print(f"Shape of dx is: {dx.shape}")
     # print(f"Shape of dw is: {dw.shape}")
+    # print(f"Shape of db is: {db.shape}")
 
     ###########################################################################
     # TODO: Copy over your solution from Assignment 1.                        #
@@ -149,7 +149,14 @@ def softmax_loss(x, y):
     - loss: Scalar giving the loss
     - dx: Gradient of the loss with respect to x
     """
-    loss, dx = None, None
+
+    N = x.shape[0]
+
+    loss = -np.mean(np.log(x[np.arange(N), y]))
+    
+    dx = np.zeros_like(x)
+    dx[np.arange(N),y] = -1/(N*x[np.arange(N), y])
+
 
     ###########################################################################
     # TODO: Copy over your solution from Assignment 1.                        #

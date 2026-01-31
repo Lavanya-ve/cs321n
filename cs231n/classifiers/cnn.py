@@ -86,10 +86,10 @@ class ThreeLayerConvNet(object):
         Input / output: Same API as TwoLayerNet in fc_net.py.
         """
 
-        def softmax(x,axis=-1):
-            x_max = np.max(x, axis=axis, keepdims=True)
-            e_x = np.exp(x - x_max)
-            return e_x / np.sum(e_x, axis=axis, keepdims=True)
+        # def softmax(x,axis=-1):
+        #     x_max = np.max(x, axis=axis, keepdims=True)
+        #     e_x = np.exp(x - x_max)
+        #     return e_x / np.sum(e_x, axis=axis, keepdims=True)
 
         W1, b1 = self.params["W1"], self.params["b1"]
         W2, b2 = self.params["W2"], self.params["b2"]
@@ -112,12 +112,10 @@ class ThreeLayerConvNet(object):
         soft_affline_out,cache_aff_for = affine_forward(hidden_affline_out,W3,b3)
         # print(f"Shape of softmax out is: {soft_affline_out.shape}")
 
-        scores_out = softmax(soft_affline_out)
-        print(f"Shape of scores is: {scores_out.shape}")
+        # scores_out = softmax(soft_affline_out)
+        # # print(f"Shape of scores is: {scores_out.shape}")
 
         #Scores is the softmax of the above output
-
-        scores = scores_out
         ############################################################################
         # TODO: Implement the forward pass for the three-layer convolutional net,  #
         # computing the class scores for X and storing them in the scores          #
@@ -132,11 +130,11 @@ class ThreeLayerConvNet(object):
         ############################################################################
 
         if y is None:
-            return scores
+            return soft_affline_out
 
         loss, grads = 0, {}
 
-        loss, dout_soft = softmax_loss(scores,y)
+        loss, dout_soft = softmax_loss(soft_affline_out,y)
         # print(f"Shape of dout after softmax loss is: {dout_soft.shape}")
         dx3, dW3, db3 = affine_backward(dout_soft,cache_aff_for)
         dx2, dW2, db2 = affine_relu_backward(dx3,cache_relu_for)

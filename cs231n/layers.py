@@ -150,12 +150,18 @@ def softmax_loss(x, y):
     - dx: Gradient of the loss with respect to x
     """
 
+    x_shifted = x - np.max(x,axis=1,keepdims=True)
+    ex = np.exp(x_shifted)
+    probs = ex/np.sum(ex,axis=1,keepdims=True)
+
     N = x.shape[0]
 
-    loss = -np.mean(np.log(x[np.arange(N), y]))
+    loss = -np.mean(np.log(probs[np.arange(N), y]))
     
-    dx = np.zeros_like(x)
-    dx[np.arange(N),y] = -1/(N*x[np.arange(N), y])
+    dx = probs.copy()
+    dx[np.arange(N), y] -= 1
+    dx /= N
+
 
 
     ###########################################################################

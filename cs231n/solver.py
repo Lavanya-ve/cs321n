@@ -179,10 +179,12 @@ class Solver(object):
 
         # Compute loss and gradient
         loss, grads = self.model.loss(X_batch, y_batch)
+        # print(f"The loss during _step is: {loss}")
         self.loss_history.append(loss)
 
         # Perform a parameter update
         for p, w in self.model.params.items():
+            # print(f"The params are we are are looking for in _step are: {p}")
             dw = grads[p]
             config = self.optim_configs[p]
             next_w, next_config = self.update_rule(w, dw, config)
@@ -230,6 +232,7 @@ class Solver(object):
 
         # Maybe subsample the data
         N = X.shape[0]
+        # print(f"Number of samples in training data is: {N} and number of samples it's asking is: {num_samples}")
         if num_samples is not None and N > num_samples:
             mask = np.random.choice(N, num_samples)
             N = num_samples
@@ -246,23 +249,26 @@ class Solver(object):
             end = (i + 1) * batch_size
             scores = self.model.loss(X[start:end])
             y_pred.append(np.argmax(scores, axis=1))
+        # print(f"Y_pred is: {y_pred}")
+        # print(f"Y is: {y}")
         y_pred = np.hstack(y_pred)
         acc = np.mean(y_pred == y)
 
         return acc
 
-    def train(self):
+    def  train(self):
         """
         Run optimization to train the model.
         """
         num_train = self.X_train.shape[0]
         iterations_per_epoch = max(num_train // self.batch_size, 1)
         num_iterations = self.num_epochs * iterations_per_epoch
+        # num_iterations = 5
 
         for t in range(num_iterations):
             self._step()
 
-            # Maybe print training loss
+            #Maybe print training loss
             if self.verbose and t % self.print_every == 0:
                 print(
                     "(Iteration %d / %d) loss: %f"
@@ -304,6 +310,7 @@ class Solver(object):
                     self.best_params = {}
                     for k, v in self.model.params.items():
                         self.best_params[k] = v.copy()
+
 
         # At the end of training swap the best params into the model
         self.model.params = self.best_params
